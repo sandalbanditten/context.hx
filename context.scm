@@ -5,23 +5,46 @@
 (require "helix/components.scm")
 (require-builtin helix/core/text)
 
+;; simple stack of cached queries
+(define MAX-CACHED-QUERIES 10)
+(define cached-queries '())
+
+(define (get-pos pred lst)
+  (letrec ([loop (lambda (pred vec idx)
+                   (cond
+                     [(>= idx (length vec)) #f]
+                     [(pred (list-ref vec idx)) idx]
+                     [else (loop pred vec (add1 idx))]))])
+    (loop pred lst 0)))
+
+(define (get-query lang)
+  (let* ([filepath (string-append "queries/" lang ".tsq")]
+         [exists (path-exists? filepath)]
+         [pos (get-pos (lambda (x) (string=? (first x) lang)) cached-queries)])
+    (cond
+      [(not exists) #f]
+      [pos (let ([elem (list-ref cached-queries pos)]) (second elem))]
+      [else
+       (let ([query (string->tsquery lang (read-port-to-string (open-input-file filepath)))])
+         (set! cached-queries (take (cons (list lang query) cached-queries) MAX-CACHED-QUERIES))
+         query)])))
+
 (define (get-current-doc-id)
-  (let* ([focus (editor-focus)]) (editor->doc-id focus)))
+  (let* ([focus (editor-focus)])
+    (if focus
+        (editor->doc-id focus)
+        #f)))
 
-(define scm-query (read-port-to-string (open-input-file "scheme.tsq")))
+(define query-loader (tsquery-loader get-query))
 
-(define query-loader
-  (tsquery-loader (lambda (lang)
-                    (cond
-                      [(string=? lang "scheme") (string->tsquery lang scm-query)]
-                      [else #f]))))
-
-(define (get-contexts)
-  (let ([text (editor->text (get-current-doc-id))])
-    (query-document query-loader (get-current-doc-id))))
+(define (get-contexts doc-id)
+  (let ([text (editor->text doc-id)]) (query-document query-loader doc-id)))
 
 (define (captures)
-  (tsmatch-capture (get-contexts) "context"))
+  (let ([doc-id (get-current-doc-id)])
+    (if (doc-id)
+        (tsmatch-capture (get-contexts doc-id) "context")
+        '())))
 
 (define (tsnode-ancestor? node t)
   (let ([r-start (tsnode-start-byte node)]
@@ -48,18 +71,20 @@
                        (begin
                          (refresh-context-query!))])))
   (register-hook! "post-command"
-                  (lambda (_)
-                    (begin
-                      (refresh-context-query!)))))
+                  (lambda (cmd)
+                    (if (string-contains? cmd "quit")
+                        void
+                        (begin
+                          (refresh-context-query!))))))
 
 (define (refresh-context-query!)
-  (set! cached-match (get-contexts)))
+  (let ([doc-id (get-current-doc-id)])
+    (if doc-id
+        (set! cached-match (get-contexts doc-id)))))
 
-(define (get-path match)
-  (if (and (TSMatch? match))
-      (let* ([doc-id (get-current-doc-id)]
-             [tree (document->tree doc-id)]
-             [root (tstree->root tree)]
+(define (get-path match doc-id tree)
+  (if (and doc-id (TSMatch? match) (TSTree? tree) (not (empty? (tsmatch-captures match))))
+      (let* ([root (tstree->root tree)]
              [text (editor->text doc-id)]
              [cursor-pos (rope-char->byte text (cursor-position))]
              [start (tsnode-descendant-byte-range root cursor-pos cursor-pos)]
@@ -75,41 +100,19 @@
                (transduce surrounding (zipping named) (into-list))))
       '()))
 
-; (define (get-path match)
-;   (and (TSMatch? match)
-;        (let* ([doc-id (get-current-doc-id)]
-;               [tree (document->tree doc-id)]
-;               [root (and tree (tstree->root tree))]
-;               [text (and doc-id (editor->text doc-id))]
-;               [cursor-pos (and text (rope-char->byte text (cursor-position)))]
-;               [start (and root cursor-pos (tsnode-descendant-byte-range root cursor-pos cursor-pos))]
-;               [surrounding (and start (tsmatch-capture match "context"))]
-;               [named (and surrounding (tsmatch-capture match "context.name"))])
-;          (and root
-;               text
-;               start
-;               surrounding
-;               named
-;               (foldl (lambda (x acc)
-;                        (let ([surrounding (first x)]
-;                              [named (last x)])
-;                          (if (and (tsnode-ancestor? surrounding start)
-;                                   (not (equal? surrounding root)))
-;                              (cons (rope->string (tsnode-text-slice named text)) acc)
-;                              acc)))
-;                      '()
-;                      (reverse (transduce surrounding (zipping named) (into-list)))))))
-;   '())
-
-(define (set-path!)
-  (set! path (string-join (get-path cached-match) " -> ")))
+(define (set-path! doc-id)
+  (set! path (string-join (get-path cached-match doc-id (document->tree doc-id)) " -> ")))
 
 (define context-status-element
-  (status-element (lambda ()
-                    (list (begin
-                            (set-path!)
-                            path)
+  (status-element (lambda (doc-id focused)
+                    (list (if focused
+                              (begin
+                                (set-path! doc-id)
+                                path)
+                              "")
                           (style-with-bold (style))))))
+
+(statusline #:center (list context-status-element))
 
 (provide context-status-element
          context-enable)
