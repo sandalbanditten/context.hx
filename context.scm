@@ -10,7 +10,7 @@
 (define cached-queries '())
 
 (define (get-pos pred lst)
-  (letrec ([loop (lambda (pred vec idx)
+  (letrec ([loop (λ (pred vec idx)
                    (cond
                      [(>= idx (length vec)) #f]
                      [(pred (list-ref vec idx)) idx]
@@ -20,7 +20,7 @@
 (define (get-query lang)
   (let* ([filepath (string-append (parent-name (current-module)) "/queries/" lang ".tsq")]
          [exists (path-exists? filepath)]
-         [pos (get-pos (lambda (x) (string=? (first x) lang)) cached-queries)])
+         [pos (get-pos (λ (x) (string=? (first x) lang)) cached-queries)])
     (cond
       [(not exists) #f]
       [pos (let ([elem (list-ref cached-queries pos)]) (second elem))]
@@ -74,7 +74,7 @@
              [start (tsnode-descendant-byte-range root cursor-pos cursor-pos)]
              [surrounding (tsmatch-capture match "context")]
              [named (tsmatch-capture match "context.name")])
-        (foldr (lambda (x acc)
+        (foldr (λ (x acc)
                  (let ([surrounding (first x)]
                        [named (last x)])
                    (if (and (tsnode-ancestor? surrounding start) (not (equal? surrounding root)))
@@ -85,10 +85,10 @@
       '()))
 
 (define (set-path! doc-id)
-  (set! path (string-join (get-path cached-match doc-id (document->tree doc-id)) " -> ")))
+  (set! path (string-join (get-path cached-match doc-id (document->tree doc-id)) " > ")))
 
 (define context-status-element
-  (status-element (lambda (doc-id focused)
+  (status-element (λ (doc-id focused)
                     (list (if focused
                               (begin
                                 (set-path! doc-id)
@@ -98,7 +98,7 @@
 
 (define (context-enable side)
   (register-hook! "post-command"
-                  (lambda (cmd)
+                  (λ (cmd)
                     (unless (and (not (string-contains? cmd "quit"))
                                  (not (string-contains? cmd "move"))
                                  (not (string-contains? cmd "write")))
