@@ -24,9 +24,6 @@ add the lines to your init.scm file to configure the context
 ;; init.scm
 (require "context/context.scm")
 
-;; register hooks
-(context-enable)
-
-;; add to the statusline config (TODO: make this nicer)
-(statusline #:center (list context-status-element))
+;; add context to the left side of the statusbar
+(context-enable 'left)
 ```

@@ -63,20 +63,6 @@
 (define cached-match #f)
 (define path "")
 
-(define (context-enable)
-  (register-hook! "on-mode-switch"
-                  (lambda (ev)
-                    (cond
-                      [(equal? (mode-switch-old ev) INSERT)
-                       (begin
-                         (refresh-context-query!))])))
-  (register-hook! "post-command"
-                  (lambda (cmd)
-                    (if (string-contains? cmd "quit")
-                        void
-                        (begin
-                          (refresh-context-query!))))))
-
 (define (refresh-context-query!)
   (let ([doc-id (get-current-doc-id)])
     (if doc-id
@@ -112,7 +98,14 @@
                               "")
                           (style-with-bold (style))))))
 
-(statusline #:center (list context-status-element))
+(define (context-enable side)
+  (register-hook! "post-command"
+                  (lambda (cmd)
+                    (unless (and (not (string-contains? cmd "quit"))
+                                 (not (string-contains? cmd "move"))
+                                 (not (string-contains? cmd "write")))
+                      (refresh-context-query!))))
+  (push-status-element! side context-status-element))
 
 (provide context-status-element
          context-enable)

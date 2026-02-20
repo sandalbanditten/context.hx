@@ -5,7 +5,20 @@
   list
     .
     (symbol) @context.name
-    (#any-of? @context.name "lambda" "λ" "let" "let*")
+    (#any-of? @context.name "lambda" "λ")
+    .
+    (list)
+    .
+    (_)
+) @context
+
+
+;; if/cond context
+(
+  list
+    .
+    (symbol) @context.name
+    (#any-of? @context.name "if")
     .
     (list)
     .
