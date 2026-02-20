@@ -18,11 +18,11 @@
     (loop pred lst 0)))
 
 (define (get-query lang)
-  (let* ([filepath (string-append "queries/" lang ".tsq")]
+  (let* ([filepath (string-append (parent-name (current-module)) "/queries/" lang ".tsq")]
          [exists (path-exists? filepath)]
          [pos (get-pos (lambda (x) (string=? (first x) lang)) cached-queries)])
     (cond
-      [(not exists) #f]
+      ; [(not exists) #f]
       [pos (let ([elem (list-ref cached-queries pos)]) (second elem))]
       [else
        (let ([query (string->tsquery lang (read-port-to-string (open-input-file filepath)))])
@@ -58,8 +58,6 @@
         [end (tsnode-end-byte node)])
     (rope->byte-slice text start end)))
 
-(define INSERT (string->editor-mode "insert"))
-
 (define cached-match #f)
 (define path "")
 
@@ -94,7 +92,7 @@
                     (list (if focused
                               (begin
                                 (set-path! doc-id)
-                                path)
+                                (string-append " " path " "))
                               "")
                           (style-with-bold (style))))))
 

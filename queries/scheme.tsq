@@ -12,19 +12,6 @@
     (_)
 ) @context
 
-
-;; if/cond context
-(
-  list
-    .
-    (symbol) @context.name
-    (#any-of? @context.name "if")
-    .
-    (list)
-    .
-    (_)
-) @context
-
 ;; Constants
 (
   list
