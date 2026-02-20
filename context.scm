@@ -40,7 +40,7 @@
 (define cached-match #f)
 (define path "")
 
-(define (enable-hooks)
+(define (context-enable)
   (register-hook! "on-mode-switch"
                   (lambda (ev)
                     (cond
@@ -104,8 +104,12 @@
 (define (set-path!)
   (set! path (string-join (get-path cached-match) " -> ")))
 
-(statusline #:center (list (status-element (lambda ()
-                                             (list (begin
-                                                     (set-path!)
-                                                     path)
-                                                   (style-with-bold (style)))))))
+(define context-status-element
+  (status-element (lambda ()
+                    (list (begin
+                            (set-path!)
+                            path)
+                          (style-with-bold (style))))))
+
+(provide context-status-element
+         context-enable)

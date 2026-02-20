@@ -3,8 +3,10 @@ Helix Plugin for context
 
 # Installation
 ```sh
-git clone https://github.com/mattwparas/helix.git -b steel-event-system
+git clone https://github.com/gerblesh/helix.git -b statusline
 ```
+(currently only the statusline is supported so a fork is required)
+I will likely make this into a steel component in the future
 
 then build/install the helix fork with:
 ```sh
@@ -24,4 +26,7 @@ add the lines to your init.scm file to configure the context
 
 ;; register hooks
 (context-enable)
+
+;; add to the statusline config (TODO: make this nicer)
+(statusline #:center (list context-status-element))
 ```
