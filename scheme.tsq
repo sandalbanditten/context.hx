@@ -1,0 +1,42 @@
+;; vi:ft=tsq
+
+;; Lambda Context
+(
+  list
+    .
+    (symbol) @context.name
+    (#any-of? @context.name "lambda" "λ")
+    .
+    (list)
+    .
+    (_)
+) @context
+
+;; Constants
+(
+  list
+    .
+    (symbol) @_kw
+    (#eq? @_kw "define")
+    .
+    (symbol) @context.name
+    .
+    (_)
+) @context
+
+;; Functions
+(
+  list
+    .
+    (symbol) @_kw
+    (#eq? @_kw "define")
+    .
+    (list
+      .
+      (symbol) @context.name
+      .
+      (symbol)*
+    )
+    .
+    (_)
+) @context
