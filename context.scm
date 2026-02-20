@@ -22,7 +22,7 @@
          [exists (path-exists? filepath)]
          [pos (get-pos (lambda (x) (string=? (first x) lang)) cached-queries)])
     (cond
-      ; [(not exists) #f]
+      [(not exists) #f]
       [pos (let ([elem (list-ref cached-queries pos)]) (second elem))]
       [else
        (let ([query (string->tsquery lang (read-port-to-string (open-input-file filepath)))])
