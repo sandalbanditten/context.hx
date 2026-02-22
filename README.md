@@ -2,6 +2,7 @@
 Helix Plugin for context
 
 # Installation
+
 ```sh
 git clone https://github.com/gerblesh/helix.git -b statusline
 ```

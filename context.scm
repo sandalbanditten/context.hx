@@ -28,7 +28,7 @@
          (= (tsnode-start-byte a-root) (tsnode-start-byte b-root)))))
 
 (define (get-query lang)
-  (let* ([filepath (string-append "queries/" lang ".tsq")]
+  (let* ([filepath (string-append (current-module) "/queries/" lang ".tsq")]
          [exists (path-exists? filepath)]
          [pos (get-pos (lambda (x) (string=? (first x) lang)) cached-queries)])
     (cond
@@ -60,10 +60,7 @@
                   acc
                   (let ([idx (get-pos (lambda (x) (tree-eq? (ConMatch-tree x) (first lst))) matches)])
                     (cond
-                      [(number? idx)
-                       (begin
-                         (set-status! "yipee, cached")
-                         (loop (rest lst) (cons (list-ref matches idx) acc)))]
+                      [(number? idx) (loop (rest lst) (cons (list-ref matches idx) acc))]
                       ;; root tree doesn't have query? don't bother.
                       [(TSQuery? (get-query (tstree->language (first lst))))
                        (begin
@@ -103,15 +100,15 @@
   (if (empty? match)
       '()
       (foldr (lambda (x acc)
-               (append (map (lambda (y) (rope->string (tsnode-text-slice (second y) text)))
+               (append acc
+                       (map (lambda (y) (rope->string (tsnode-text-slice (second y) text)))
                             (filter (lambda (z)
                                       (let ([surrounding (first z)])
                                         (and (<= pos (tsnode-end-byte surrounding))
                                              (>= pos (tsnode-start-byte surrounding)))))
                                     (transduce (ConMatch-nodes x)
                                                (zipping (ConMatch-surrouding x))
-                                               (into-list))))
-                       acc))
+                                               (into-list))))))
              '()
              match)))
 
@@ -138,6 +135,8 @@
                           (style-with-bold (style))))))
 
 (define (context-enable side)
+  (register-hook! "document-changed" (lambda (_ _) (refresh-context-query!)))
+  (register-hook! "document-focus-lost" (lambda (_) (refresh-context-query!)))
   (push-status-element! side context-status-element))
 
 (provide context-status-element
