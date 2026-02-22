@@ -25,5 +25,17 @@ add the lines to your init.scm file to configure the context
 (require "context/context.scm")
 
 ;; add context to the left side of the statusbar
-(context-enable 'left)
+(context-enable 'right)
+
+(tsnode-print-tree (tstree->root (get-tree-at-cursor (get-current-doc-id))))
+
+(define (waaaaa)
+  (display "heyo"))
+  
+
+(refresh-context-query!)
+(set-status! path)
+(display path)
+(set-path! (get-current-doc-id))
+
 ```
