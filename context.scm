@@ -27,7 +27,7 @@
          [pos (get-pos (lambda (x) (string=? (first x) lang)) cached-queries)])
     (cond
       [(not exists) #f]
-      [pos (let ([elem (list-ref cached-queries pos)]) (second elem))]
+      [(number? pos) (let ([elem (list-ref cached-queries pos)]) (second elem))]
       [else
        (let ([query (string->tsquery lang (read-port-to-string (open-input-file filepath)))])
          (set! cached-queries (take (cons (list lang query) cached-queries) MAX-CACHED-QUERIES))
@@ -46,12 +46,6 @@
          [pos (rope-char->byte text (cursor-position))])
     (document->layers-byte-range doc-id pos pos)))
 
-(define (get-index mem lst)
-  (cond
-    [(empty? lst) #f]
-    [(equal? mem (first lst)) #t]
-    [else (get-index mem (rest lst))]))
-
 (define (get-contexts doc-id matches)
   (letrec ([trees (get-trees-at-cursor doc-id)]
            [loop
@@ -59,7 +53,7 @@
               (cond
                 [(empty? lst) acc]
                 [(member (first lst) (map ConMatch-tree matches))
-                 (let ([idx (get-index (first lst) (map ConMatch-tree matches))])
+                 (let ([idx (get-pos (lambda (x) (equal? (ConMatch-tree x) (first lst))) matches)])
                    (set-status! "skibidi")
                    (loop (rest lst) (cons (list-ref matches idx) acc)))]
                 ;; root tree doesn't have query? don't bother.
@@ -79,14 +73,13 @@
                                              (tsmatch-capture match "context"))]
                               [surrounding (filter (lambda (x) (equal? (tsnode->tstree x) tree))
                                                    (tsmatch-capture match "context.name"))])
-                         (cons (ConMatch tree named surrounding) acc)))]))])
+                         (loop (rest lst) (cons (ConMatch tree named surrounding) acc))))]))])
     (loop trees '())))
 
 (define (tsnode-text-slice node text)
   (let ([start (tsnode-start-byte node)]
         [end (tsnode-end-byte node)])
-    (if (< end (rope-len-bytes text))
-        (rope->byte-slice text start end))))
+    (rope->byte-slice text start end)))
 
 (define cached-match '())
 (define path "")
@@ -94,9 +87,7 @@
 (define (refresh-context-query!)
   (let* ([doc-id (get-current-doc-id)])
     (if doc-id
-        (begin
-          ; (set-status! "waahh")
-          (set! cached-match (get-contexts doc-id cached-match))))))
+        (set! cached-match (get-contexts doc-id cached-match)))))
 
 (define (get-path match text pos)
   (if (and (not (empty? match)))
