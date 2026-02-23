@@ -28,5 +28,4 @@ add the lines to your init.scm file to configure the context
 ;; add context to the left side of the statusbar
 (context-enable 'right)
 
-(tsnode-print-tree (tstree->root (get-tree-at-cursor (get-current-doc-id))))
 ```
