@@ -1,0 +1,10 @@
+;; vi:ft=tsq
+
+(section
+  .
+  (heading
+    .
+    _
+    (text) @context.name
+  )
+) @context
