@@ -3,6 +3,7 @@
 (require "helix/misc.scm")
 (require "helix/configuration.scm")
 (require "helix/components.scm")
+(require (prefix-in static. "helix/static.scm"))
 (require-builtin helix/core/text)
 
 (struct ConMatch (tree surrouding nodes))
@@ -12,6 +13,11 @@
 (define cached-queries '())
 
 (define cached-tree-start -1)
+
+(define query-path
+  (if (current-module)
+      (string-append (parent-name (current-module)) "/queries/")
+      (string-append (static.get-helix-cwd) "/queries/")))
 
 (define (get-pos pred lst)
   (letrec ([loop (lambda (pred vec idx)
@@ -25,10 +31,11 @@
   (let ([a-root (tstree->root a)]
         [b-root (tstree->root b)])
     (and (= (tsnode-end-byte a-root) (tsnode-end-byte b-root))
-         (= (tsnode-start-byte a-root) (tsnode-start-byte b-root)))))
+         (= (tsnode-start-byte a-root) (tsnode-start-byte b-root))
+         (string=? (tstree->language a) (tstree->language b)))))
 
 (define (get-query lang)
-  (let* ([filepath (string-append (current-module) "/queries/" lang ".tsq")]
+  (let* ([filepath (string-append query-path lang ".tsq")]
          [exists (path-exists? filepath)]
          [pos (get-pos (lambda (x) (string=? (first x) lang)) cached-queries)])
     (cond
@@ -80,7 +87,6 @@
                             (cons (ConMatch tree surrounding named) acc))))]
                       [else (loop (rest lst) acc)]))))])
 
-    ; (set-status! trees)
     (loop trees '())))
 
 (define (tsnode-text-slice node text)
@@ -91,10 +97,13 @@
 (define cached-match '())
 (define path "")
 
-(define (refresh-context-query!)
-  (let* ([doc-id (get-current-doc-id)])
-    (if doc-id
-        (set! cached-match (get-contexts doc-id cached-match)))))
+(define (refresh-context-query! full doc-id)
+  (if doc-id
+      (set! cached-match
+            (get-contexts doc-id
+                          (if full
+                              '()
+                              cached-match)))))
 
 (define (get-path match text pos)
   (if (empty? match)
@@ -121,7 +130,7 @@
                                 (not (= (tsnode-start-byte (tstree->root tree)) cached-tree-start)))
                            (begin
                              (set! cached-tree-start (tsnode-start-byte (tstree->root tree)))
-                             (refresh-context-query!)))
+                             (refresh-context-query! #f doc-id)))
                        (get-path cached-match text pos))
                      " > ")))
 
@@ -135,8 +144,8 @@
                           (style-with-bold (style))))))
 
 (define (context-enable side)
-  (register-hook! "document-changed" (lambda (_ _) (refresh-context-query!)))
-  (register-hook! "document-focus-lost" (lambda (_) (refresh-context-query!)))
+  (register-hook! "document-changed" (lambda (doc-id _) (refresh-context-query! #f doc-id)))
+  (register-hook! "document-focus-lost" (lambda (_) (refresh-context-query! #t (get-current-doc-id))))
   (push-status-element! side context-status-element))
 
 (provide context-status-element
