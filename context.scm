@@ -137,8 +137,7 @@
                            (begin
                              (set! cached-tree-start (tsnode-start-byte (tstree->root tree)))
                              (refresh-context-query! #f doc-id)))
-                       ; (get-path cached-match text pos)
-                       '())
+                       (get-path cached-match text pos))
                      " > ")))
 
 (define context-status-element
