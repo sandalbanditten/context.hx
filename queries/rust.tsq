@@ -1,0 +1,10 @@
+;; vi:ft=tsq
+
+(impl_item
+  type: _ @context.name
+) @context
+
+
+(function_item
+  name: _ @context.name
+) @context

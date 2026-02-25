@@ -6,7 +6,7 @@
 (require (prefix-in static. "helix/static.scm"))
 (require-builtin helix/core/text)
 
-(struct ConMatch (tree surrouding nodes))
+(struct ConMatch (tree surrounding nodes))
 
 ;; simple stack of cached queries
 (define MAX-CACHED-QUERIES 10)
@@ -77,29 +77,32 @@
                  ;; root tree doesn't have query? don't bother.
                  [(TSQuery? (get-query (tstree->language (first lst))))
                   (begin
-                    (loop (rest lst)
-                          (let* ([tree (first lst)]
-                                 [root (tstree->root tree)]
-                                 [match (query-document-byte-range query-loader
-                                                                   doc-id
-                                                                   (tsnode-start-byte root)
-                                                                   ;; skibidi finess
-                                                                   (sub1 (tsnode-end-byte root)))])
-                            (if (TSMatch? match)
-                                (let ([named (filter (lambda (x) (tree-eq? (tsnode->tstree x) tree))
-                                                     (list-coerce (tsmatch-capture match "context")))]
-                                      [surrounding
-                                       (filter (lambda (x) (tree-eq? (tsnode->tstree x) tree))
-                                               (list-coerce (tsmatch-capture match "context.name")))])
-                                  (cons (ConMatch tree surrounding named) acc))
-                                acc))))]
+                    (loop
+                     (rest lst)
+                     (let* ([tree (first lst)]
+                            [root (tstree->root tree)]
+                            [match (query-document-byte-range query-loader
+                                                              doc-id
+                                                              (tsnode-start-byte root)
+                                                              ;; skibidi finess
+                                                              (sub1 (tsnode-end-byte root)))])
+                       (if (TSMatch? match)
+                           (let ([named (filter (lambda (x) (tree-eq? (tsnode->tstree x) tree))
+                                                (list-coerce (tsmatch-capture match "context.name")))]
+                                 [surrounding (filter (lambda (x) (tree-eq? (tsnode->tstree x) tree))
+                                                      (list-coerce (tsmatch-capture match
+                                                                                    "context")))])
+                             (cons (ConMatch tree surrounding named) acc))
+                           acc))))]
                  [else (loop (rest lst) acc)]))]))])
     (loop trees '())))
 
 (define (tsnode-text-slice node text)
   (let ([start (tsnode-start-byte node)]
         [end (tsnode-end-byte node)])
-    (rope->byte-slice text start end)))
+    (if (< end (rope-len-bytes text))
+        (rope->string (rope->byte-slice text start end))
+        "")))
 
 (define cached-match '())
 (define path "")
@@ -116,13 +119,13 @@
       '()
       (foldr (lambda (x acc)
                (append acc
-                       (map (lambda (y) (rope->string (tsnode-text-slice (second y) text)))
+                       (map (lambda (y) (tsnode-text-slice (second y) text))
                             (filter (lambda (z)
                                       (let ([surrounding (first z)])
                                         (and (<= pos (tsnode-end-byte surrounding))
                                              (>= pos (tsnode-start-byte surrounding)))))
-                                    (transduce (ConMatch-nodes x)
-                                               (zipping (ConMatch-surrouding x))
+                                    (transduce (ConMatch-surrounding x)
+                                               (zipping (ConMatch-nodes x))
                                                (into-list))))))
              '()
              match)))
