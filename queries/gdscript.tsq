@@ -1,0 +1,9 @@
+;; vi:ft=tsq
+
+
+(function_definition
+  name: _ @context.name) @context
+
+
+(class_definition
+  name: _ @context.name) @context
