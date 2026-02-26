@@ -62,7 +62,6 @@
         "")))
 
 (define cached-match #f)
-(define path "")
 
 (define (refresh-context-query! doc-id)
   (set! cached-match (get-contexts doc-id)))
@@ -78,17 +77,18 @@
               (transduce (ConMatch-surrounding match) (zipping (ConMatch-nodes match)) (into-list)))))
       '()))
 
-(define (set-path! doc-id)
-  (set! path (string-join (get-path cached-match doc-id) " ⇒ ")))
+(define (sep lst s)
+  (cond
+    [(empty? lst) lst]
+    [(empty? (rest lst)) lst]
+    [else (cons (first lst) (cons s (sep (rest lst) s)))]))
 
 (define context-status-element
   (status-element (lambda (view-id focused)
-                    (list (span (if focused
-                                    (begin
-                                      (set-path! (editor->doc-id view-id))
-                                      (string-append " " path " "))
-                                    "")
-                                (style-with-bold (style)))))))
+                    (if focused
+                        (sep (map (lambda (x) (span x (style)))
+                                  (get-path cached-match (editor->doc-id view-id)))
+                             (span " ⇒ " (style-with-dim (style))))))))
 
 (define (context-enable side)
   (register-hook 'document-changed (lambda (doc-id _) (refresh-context-query! doc-id)))
