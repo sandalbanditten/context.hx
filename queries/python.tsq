@@ -2,8 +2,10 @@
 
 
 (function_definition
-  name: _ @context.name) @context
+  "def" @keyword.function
+  name: (identifier) @function) @context
 
 
 (class_definition
-  name: _ @context.name) @context
+  "class" @keyword
+  name: (identifier) @type) @context

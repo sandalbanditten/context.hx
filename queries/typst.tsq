@@ -1,5 +1,7 @@
 ;; vi:ft=tsq
 
+;; TODO: actually do the code context (I don't write enough typst for this tbh)
+
 (section
   .
   (heading

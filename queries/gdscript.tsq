@@ -3,9 +3,9 @@
 
 (function_definition
   "func" @keyword.control
-  name: _ @function) @context
+  name: (name) @function) @context
 
 
 (class_definition
   "class" @keyword
-  name: _ @type) @context
+  name: (name) @type) @context

@@ -1,5 +1,11 @@
 ;; vi:ft=tsq
 
+(mod_item
+  ((visibility_modifier _) @keyword)?
+  "mod" @keyword
+  name: (identifier) @name
+) @context
+
 (impl_item
   "impl" @keyword
   type: (_) @type
