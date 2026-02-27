@@ -117,7 +117,7 @@
   (let ([match (query-document query-loader doc-id)])
     (if (TSMatch? match)
         (enumerate-captures match)
-        #f)))
+        '())))
 
 (define (tsnode-text-slice node text)
   (let ([start (tsnode-start-byte node)]
@@ -154,13 +154,14 @@
 (define context-status-element
   (status-element (lambda (view-id focused)
                     (if focused
-                        (foldl (lambda (x acc)
-                                 (append x
-                                         (if (empty? acc)
-                                             acc
-                                             (cons (span ": " (style)) acc))))
-                               '()
-                               (get-path cached-match (editor->doc-id view-id)))
+                        (cons (span " " (style))
+                              (foldl (lambda (x acc)
+                                       (append x
+                                               (if (empty? acc)
+                                                   acc
+                                                   (cons (span ": " (style)) acc))))
+                                     '()
+                                     (get-path cached-match (editor->doc-id view-id))))
                         '()))))
 
 (define (context-enable side)
