@@ -1,0 +1,16 @@
+;; vi:ft=tsq
+
+(function_declaration
+  ("pub" @keyword)?
+  "fn" @keyword.function
+  name: (identifier) @function
+) @context
+
+(variable_declaration
+  (identifier) @type
+  .
+  "="
+  .
+  [(struct_declaration "struct" @keyword) (enum_declaration "enum" @keyword)] 
+) @context
+
