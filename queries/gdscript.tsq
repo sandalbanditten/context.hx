@@ -2,8 +2,8 @@
 
 
 (function_definition
-  name: _ @context.name) @context
+  name: _ @function) @context
 
 
 (class_definition
-  name: _ @context.name) @context
+  name: _ @type) @context

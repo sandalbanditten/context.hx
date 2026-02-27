@@ -3,6 +3,6 @@
 (section
   .
   (atx_heading
-    heading_content: _ @context.name
+    heading_content: _ @heading
   )
 ) @context

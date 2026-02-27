@@ -4,8 +4,8 @@
 (
   list
     .
-    (symbol) @context.name
-    (#any-of? @context.name "lambda" "λ")
+    (symbol) @keyword
+    (#any-of? @keyword "lambda" "λ")
     .
     (list)
     .
@@ -16,27 +16,23 @@
 (
   list
     .
-    (symbol) @_kw
-    (#eq? @_kw "define")
+    (symbol) @keyword
+    (#any-of? @keyword "define" "define-syntax" "define-macro")
     .
-    (symbol) @context.name
-    .
-    _
+    (symbol) @name
 ) @context
 
 ;; Functions
 (
   list
     .
-    (symbol) @_kw
-    (#eq? @_kw "define")
+    (symbol) @keyword
+    (#any-of? @keyword "define" "define/contract")
     .
     (list
       .
-      (symbol) @context.name
+      (symbol) @function
       .
       (symbol)*
     )
-    .
-    _
 ) @context

@@ -5,6 +5,6 @@
   (heading
     .
     _
-    (text) @context.name
+    (text) @heading
   )
 ) @context

@@ -6,11 +6,76 @@
 (require (prefix-in static. "helix/static.scm"))
 (require-builtin helix/core/text)
 
-(struct ConMatch (surrounding nodes))
+(struct CtxNode (node named-nodes) #:mutable)
+(struct NodeStyle (node style))
 
-;; simple stack of cached queries
+(define (list-coerce l)
+  (if (list? l)
+      l
+      '()))
+
+(define (insert-node-sorted node lst)
+  (define (start n)
+    (tsnode-start-byte (NodeStyle-node n)))
+
+  (define (binsert left right)
+    (if (>= left right)
+        (append (take lst left) (list node) (drop lst left))
+        (let* ([mid (quotient (+ left right) 2)]
+               [mid-node (list-ref lst mid)])
+          (if (< (start node) (start mid-node))
+              (binsert left mid)
+              (binsert (+ mid 1) right)))))
+
+  (binsert 0 (length lst)))
 (define MAX-CACHED-QUERIES 10)
 (define cached-queries '())
+
+(define (match-node-to-context node contexts s)
+  (cond
+    [(empty? contexts) #f]
+    [(tsnode-within-byte-range? node
+                                (tsnode-start-byte (CtxNode-node (first contexts)))
+                                (tsnode-end-byte (CtxNode-node (first contexts))))
+
+     (begin
+       (set-CtxNode-named-nodes! (first contexts)
+                                 (insert-node-sorted (NodeStyle node s)
+                                                     (CtxNode-named-nodes (first contexts))))
+       #t)]
+    [else (match-node-to-context node (rest contexts) s)]))
+
+(define valid-captures
+  (hash "name"
+        (style)
+        "function.macro"
+        (theme-scope-ref "function.macro")
+        "function"
+        (theme-scope-ref "function")
+        "constant"
+        (theme-scope-ref "constant")
+        "type"
+        (theme-scope-ref "type")
+        "type.primitive"
+        (theme-scope-ref "type.builtin")
+        "keyword"
+        (theme-scope-ref "keyword")
+        "heading"
+        (theme-scope-ref "markup.heading")))
+
+(define (enumerate-captures match)
+  (if (TSMatch? match)
+      (let ([contexts (reverse (map (lambda (x) (CtxNode x '()))
+                                    (list-coerce (tsmatch-capture match "context"))))])
+        (for-each (lambda (x)
+                    (cond
+                      [(hash-contains? valid-captures x)
+                       (for-each (lambda (y)
+                                   (match-node-to-context y contexts (hash-get valid-captures x)))
+                                 (tsmatch-capture match x))]))
+                  (tsmatch-captures match))
+        contexts)
+      #f))
 
 (define query-path
   (if (current-module)
@@ -42,40 +107,37 @@
 
 (define query-loader (tsquery-loader get-query))
 
-(define (list-coerce l)
-  (if (list? l)
-      l
-      '()))
-
 (define (get-contexts doc-id)
   (let ([match (query-document query-loader doc-id)])
     (if (TSMatch? match)
-        (ConMatch (list-coerce (tsmatch-capture match "context"))
-                  (list-coerce (tsmatch-capture match "context.name")))
+        (enumerate-captures match)
         #f)))
 
 (define (tsnode-text-slice node text)
   (let ([start (tsnode-start-byte node)]
         [end (tsnode-end-byte node)])
     (if (< end (rope-len-bytes text))
-        (rope->string (rope->byte-slice text start end))
+        (string-append (rope->string (rope->byte-slice text start end)) " ")
         "")))
 
-(define cached-match #f)
+(define cached-match '())
 
 (define (refresh-context-query! doc-id)
   (set! cached-match (get-contexts doc-id)))
 
 (define (get-path match doc-id)
-  (if (ConMatch? match)
+  (if (empty? match)
+      '()
       (let* ([text (editor->text doc-id)]
              [pos (rope-char->byte text (cursor-position))])
-        (map (lambda (x) (tsnode-text-slice (second x) text))
-             (filter
-              (lambda (z)
-                (and (<= pos (tsnode-end-byte (first z))) (>= pos (tsnode-start-byte (first z)))))
-              (transduce (ConMatch-surrounding match) (zipping (ConMatch-nodes match)) (into-list)))))
-      '()))
+        (map (lambda (x)
+               (map (lambda (y)
+                      (span (tsnode-text-slice (NodeStyle-node y) text) (NodeStyle-style y)))
+                    (CtxNode-named-nodes x)))
+             (filter (lambda (y)
+                       (and (<= pos (tsnode-end-byte (CtxNode-node y)))
+                            (>= pos (tsnode-start-byte (CtxNode-node y)))))
+                     match)))))
 
 (define (sep lst s)
   (cond
@@ -86,9 +148,16 @@
 (define context-status-element
   (status-element (lambda (view-id focused)
                     (if focused
-                        (sep (map (lambda (x) (span x (style)))
-                                  (get-path cached-match (editor->doc-id view-id)))
-                             (span " : " (theme-scope-ref "keyword")))
+                        (foldl (lambda (x acc)
+                                 (append x
+                                         (if (empty? acc)
+                                             acc
+                                             (cons (span ": " (style)) acc))))
+                               '()
+                               (get-path cached-match (editor->doc-id view-id)))
+                        ; (sep (map (lambda (x) (span x (style)))
+                        ;           (get-path cached-match (editor->doc-id view-id)))
+                        ;      (span " : " (theme-scope-ref "keyword")))
                         '()))))
 
 (define (context-enable side)
