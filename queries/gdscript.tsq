@@ -2,8 +2,10 @@
 
 
 (function_definition
+  "func" @keyword.control
   name: _ @function) @context
 
 
 (class_definition
+  "class" @keyword
   name: _ @type) @context

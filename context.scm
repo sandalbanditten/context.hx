@@ -60,6 +60,12 @@
         (theme-scope-ref "type.builtin")
         "keyword"
         (theme-scope-ref "keyword")
+        "keyword.function"
+        (theme-scope-ref "keyword.function")
+        "keyword.directive"
+        (theme-scope-ref "keyword.directive")
+        "keyword.control"
+        (theme-scope-ref "keyword.control")
         "heading"
         (theme-scope-ref "markup.heading")))
 
@@ -155,9 +161,6 @@
                                              (cons (span ": " (style)) acc))))
                                '()
                                (get-path cached-match (editor->doc-id view-id)))
-                        ; (sep (map (lambda (x) (span x (style)))
-                        ;           (get-path cached-match (editor->doc-id view-id)))
-                        ;      (span " : " (theme-scope-ref "keyword")))
                         '()))))
 
 (define (context-enable side)

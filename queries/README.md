@@ -12,4 +12,5 @@ to make a context query, the following captures matter:
 * `@type`: custom class/type highlight/capture
 * `@type.primitive`: primitive type highlight/capture
 * `@keyword`: keyword highlight/capture
+* `@keyword.function`: function keyword highlight/capture
 * `@heading`: markup heading highlight/capture

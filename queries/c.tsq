@@ -1,9 +1,7 @@
 ;; vi:ft=tsq
 
 (function_definition
- type: [(primitive_type) @type.primitive (type_identifier) @type]
+ type: (_) @type.primitive
  declarator: (function_declarator declarator: [(identifier) (field_identifier)] @function)) @context
 
-(preproc_function_def name: (identifier) @constant) @context
-
-(preproc_ifdef name: (identifier) @constant) @context
+(preproc_ifdef "#ifdef" @keyword.directive name: (identifier) @constant) @context

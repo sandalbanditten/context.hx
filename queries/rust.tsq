@@ -1,10 +1,22 @@
 ;; vi:ft=tsq
 
 (impl_item
-  type: _ @context.name
+  "impl" @keyword
+  type: (_) @type
+  !trait
+) @context
+
+;; with trait
+(impl_item
+  "impl" @keyword
+  trait: (_) @type
+  "for" @keyword
+  type: (_) @type
 ) @context
 
 
 (function_item
-  name: _ @context.name
+  ((visibility_modifier _) @keyword)?
+  "fn" @keyword.function
+  name: _ @function
 ) @context
