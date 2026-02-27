@@ -88,7 +88,8 @@
                     (if focused
                         (sep (map (lambda (x) (span x (style)))
                                   (get-path cached-match (editor->doc-id view-id)))
-                             (span " : " (theme-scope-ref "keyword")))))))
+                             (span " : " (theme-scope-ref "keyword")))
+                        '()))))
 
 (define (context-enable side)
   (register-hook 'document-changed (lambda (doc-id _) (refresh-context-query! doc-id)))
