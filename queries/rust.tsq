@@ -3,7 +3,7 @@
 (mod_item
   ((visibility_modifier _) @keyword)?
   "mod" @keyword
-  name: (identifier) @name
+  name: (identifier) @namespace
 ) @context
 
 (impl_item
@@ -20,6 +20,18 @@
   type: (_) @type
 ) @context
 
+(struct_item
+  ((visibility_modifier _) @keyword)?
+  "struct" @keyword
+  name: (_) @type
+) @context
+
+
+(enum_item
+  ((visibility_modifier _) @keyword)?
+  "enum" @keyword
+  name: (_) @type
+) @context
 
 (function_item
   ((visibility_modifier _) @keyword)?

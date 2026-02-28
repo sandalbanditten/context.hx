@@ -13,4 +13,5 @@ to make a context query, the following captures matter:
 * `@type.primitive`: primitive type highlight/capture
 * `@keyword`: keyword highlight/capture
 * `@keyword.function`: function keyword highlight/capture
+* `@namespace`: namespace highlight/capture
 * `@heading`: markup heading highlight/capture

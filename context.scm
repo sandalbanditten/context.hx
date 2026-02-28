@@ -66,6 +66,8 @@
         (theme-scope-ref "keyword.directive")
         "keyword.control"
         (theme-scope-ref "keyword.control")
+        "namespace"
+        (theme-scope-ref "namespace")
         "heading"
         (theme-scope-ref "markup.heading")))
 
