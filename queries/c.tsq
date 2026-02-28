@@ -6,7 +6,7 @@
  @type.primitive
  declarator:
  [(function_declarator declarator: [(identifier) (field_identifier)] @function)
-  (pointer_declarator "*" @type
+  (pointer_declarator "*" @type.primitive
                       declarator:
                       (function_declarator declarator: [(identifier) (field_identifier)] @function))])
 @context
