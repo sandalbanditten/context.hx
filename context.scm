@@ -17,17 +17,12 @@
 (define (insert-node-sorted node lst)
   (define (start n)
     (tsnode-start-byte (NodeStyle-node n)))
+  (cond
+    [(empty? lst) (list node)]
+    [(> (tsnode-start-byte (NodeStyle-node (first lst))) (tsnode-start-byte (NodeStyle-node node)))
+     (cons node lst)]
+    [else (cons (first lst) (insert-node-sorted node (rest lst)))]))
 
-  (define (binsert left right)
-    (if (>= left right)
-        (append (take lst left) (list node) (drop lst left))
-        (let* ([mid (quotient (+ left right) 2)]
-               [mid-node (list-ref lst mid)])
-          (if (< (start node) (start mid-node))
-              (binsert left mid)
-              (binsert (+ mid 1) right)))))
-
-  (binsert 0 (length lst)))
 (define MAX-CACHED-QUERIES 10)
 (define cached-queries '())
 
@@ -139,22 +134,38 @@
 (define cached-match '())
 
 (define (refresh-context-query! doc-id)
-  ; (log::error! cached-match)
   (set! cached-match (get-contexts doc-id)))
 
+(define dirty #t)
+(define cached-path '())
+
 (define (get-path match doc-id)
-  (if (empty? match)
-      '()
-      (let* ([text (editor->text doc-id)]
-             [pos (rope-char->byte text (cursor-position))])
-        (map (lambda (x)
-               (map (lambda (y)
-                      (span (tsnode-text-slice (NodeStyle-node y) text) (NodeStyle-style y)))
-                    (CtxNode-named-nodes x)))
-             (filter (lambda (y)
-                       (and (<= pos (tsnode-end-byte (CtxNode-node y)))
-                            (>= pos (tsnode-start-byte (CtxNode-node y)))))
-                     match)))))
+  (cond
+    [(empty? match) '()]
+    [dirty cached-path]
+    [else
+     (let* ([text (editor->text doc-id)]
+            [pos (rope-char->byte text (cursor-position))])
+       (map (lambda (x)
+              (map (lambda (y) (span (tsnode-text-slice (NodeStyle-node y) text) (NodeStyle-style y)))
+                   (CtxNode-named-nodes x)))
+            (filter (lambda (y)
+                      (and (<= pos (tsnode-end-byte (CtxNode-node y)))
+                           (>= pos (tsnode-start-byte (CtxNode-node y)))))
+                    match)))]))
+
+(define gen 0)
+
+(define (debounce delay-ms #%fn)
+  (set! gen (+ gen 1))
+  (set! dirty #t)
+  (let ([own-gen gen])
+    (enqueue-thread-local-callback-with-delay delay-ms
+                                              (lambda ()
+                                                (when (>= own-gen gen)
+                                                  (begin
+                                                    (apply #%fn '())
+                                                    (set! dirty #f)))))))
 
 (define (sep lst s)
   (cond
@@ -172,12 +183,25 @@
                                                    acc
                                                    (cons (span ": " (style)) acc))))
                                      '()
-                                     (get-path cached-match (editor->doc-id view-id))))
+                                     (begin
+                                       (set! cached-path
+                                             (get-path cached-match (editor->doc-id view-id)))
+                                       cached-path)))
                         '()))))
 
 (define (context-enable side)
-  (register-hook 'document-changed (lambda (doc-id _) (refresh-context-query! doc-id)))
-  (register-hook 'document-focus-lost (lambda (_) (refresh-context-query! (get-current-doc-id))))
+  (register-hook 'document-changed
+                 (lambda (doc-id _) (debounce 150 (lambda () (refresh-context-query! doc-id)))))
+  (register-hook 'document-focus-lost
+                 (lambda (_)
+                   (debounce 150 (lambda () (refresh-context-query! (get-current-doc-id))))))
+  (register-hook 'document-closed
+                 (lambda (_)
+                   (begin
+                     (set-status! "aljksdflaksdjfla")
+                     (log::error! "DOCUMENT CLOSED")
+                     (debounce 150 (lambda () (refresh-context-query! (get-current-doc-id)))))))
+
   (push-status-element! side context-status-element))
 
 (provide context-status-element
