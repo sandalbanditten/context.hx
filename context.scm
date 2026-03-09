@@ -32,18 +32,22 @@
 (define cached-queries '())
 
 (define (match-node-to-context node contexts s)
-  (cond
-    [(empty? contexts) #f]
-    [(tsnode-within-byte-range? node
-                                (tsnode-start-byte (CtxNode-node (first contexts)))
-                                (tsnode-end-byte (CtxNode-node (first contexts))))
+  (define node-start (tsnode-start-byte node))
 
-     (begin
-       (set-CtxNode-named-nodes! (first contexts)
-                                 (insert-node-sorted (NodeStyle node s)
-                                                     (CtxNode-named-nodes (first contexts))))
-       #t)]
-    [else (match-node-to-context node (rest contexts) s)]))
+  (define (bsearch left right)
+    (if (>= left right)
+        left
+        (let* ([mid (quotient (+ left right) 2)]
+               [mid-node (list-ref contexts mid)])
+          (if (< node-start (tsnode-start-byte (CtxNode-node mid-node)))
+              (bsearch (+ mid 1) right)
+              (bsearch left mid)))))
+
+  (define idx (bsearch 0 (length contexts)))
+
+  (define ctx-node (list-ref contexts idx))
+  (set-CtxNode-named-nodes! ctx-node
+                            (insert-node-sorted (NodeStyle node s) (CtxNode-named-nodes ctx-node))))
 
 (define valid-captures
   (hash "name"
@@ -75,12 +79,12 @@
   (if (TSMatch? match)
       (let ([contexts (reverse (map (lambda (x) (CtxNode x '()))
                                     (list-coerce (tsmatch-capture match "context"))))])
-        (for-each (lambda (x)
+        (for-each (lambda (elem)
                     (cond
-                      [(hash-contains? valid-captures x)
+                      [(hash-contains? valid-captures elem)
                        (for-each (lambda (y)
-                                   (match-node-to-context y contexts (hash-get valid-captures x)))
-                                 (tsmatch-capture match x))]))
+                                   (match-node-to-context y contexts (hash-get valid-captures elem)))
+                                 (tsmatch-capture match elem))]))
                   (tsmatch-captures match))
         contexts)
       #f))
@@ -118,7 +122,11 @@
 (define (get-contexts doc-id)
   (let ([match (query-document query-loader doc-id)])
     (if (TSMatch? match)
-        (enumerate-captures match)
+        (begin
+          (define c #f)
+
+          (set! c (enumerate-captures match))
+          c)
         '())))
 
 (define (tsnode-text-slice node text)
@@ -131,6 +139,7 @@
 (define cached-match '())
 
 (define (refresh-context-query! doc-id)
+  ; (log::error! cached-match)
   (set! cached-match (get-contexts doc-id)))
 
 (define (get-path match doc-id)
