@@ -4,7 +4,7 @@ Helix Plugin for context (requires unmerged branch)
 # Installation
 
 ```sh
-git clone https://github.com/gerblesh/helix.git -b driver
+git clone https://github.com/gerblesh/helix.git -b statusline
 ```
 (currently only the statusline is supported so a fork is required)
 I will likely make this into a steel component in the future
