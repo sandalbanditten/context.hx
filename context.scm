@@ -3,6 +3,7 @@
 (require "helix/misc.scm")
 (require "helix/configuration.scm")
 (require "helix/components.scm")
+(require "breadcrumbs/breadcrumbs.scm")
 (require (prefix-in static. "helix/static.scm"))
 (require-builtin helix/core/text)
 
@@ -136,13 +137,13 @@
 (define (refresh-context-query! doc-id)
   (set! cached-match (get-contexts doc-id)))
 
-(define dirty #t)
+(define queued (box #f))
 (define cached-path '())
 
 (define (get-path match doc-id)
   (cond
     [(empty? match) '()]
-    [dirty cached-path]
+    [(unbox queued) cached-path]
     [else
      (let* ([text (editor->text doc-id)]
             [pos (rope-char->byte text (cursor-position))])
@@ -154,18 +155,16 @@
                            (>= pos (tsnode-start-byte (CtxNode-node y)))))
                     match)))]))
 
-(define gen 0)
+; (define debounce-delay-ms 200)
 
-(define (debounce delay-ms #%fn)
-  (set! gen (+ gen 1))
-  (set! dirty #t)
-  (let ([own-gen gen])
-    (enqueue-thread-local-callback-with-delay delay-ms
+(define (debounce debounce-delay-ms func)
+  ;; If we haven't queued it, queue it up
+  (unless (unbox queued)
+    (set-box! queued #t)
+    (enqueue-thread-local-callback-with-delay debounce-delay-ms
                                               (lambda ()
-                                                (when (>= own-gen gen)
-                                                  (begin
-                                                    (apply #%fn '())
-                                                    (set! dirty #f)))))))
+                                                (func)
+                                                (set-box! queued #f)))))
 
 (define (sep lst s)
   (cond
@@ -191,16 +190,18 @@
 
 (define (context-enable side)
   (register-hook 'document-changed
-                 (lambda (doc-id _) (debounce 150 (lambda () (refresh-context-query! doc-id)))))
+                 (lambda (_ _)
+                   (debounce 200 (lambda () (refresh-context-query! (get-current-doc-id))))))
   (register-hook 'document-focus-lost
-                 (lambda (_)
-                   (debounce 150 (lambda () (refresh-context-query! (get-current-doc-id))))))
+                 (lambda (_) (debounce 50 (lambda () (refresh-context-query! (get-current-doc-id))))))
   (register-hook 'document-closed
                  (lambda (_)
-                   (begin
-                     (set-status! "aljksdflaksdjfla")
-                     (log::error! "DOCUMENT CLOSED")
-                     (debounce 150 (lambda () (refresh-context-query! (get-current-doc-id)))))))
+
+                   (debounce 50 (lambda () (refresh-context-query! (get-current-doc-id))))))
+  (register-hook 'post-command
+                 (lambda (cmd)
+                   (if (string-contains? cmd "quit")
+                       (debounce 50 (lambda () (refresh-context-query! (get-current-doc-id)))))))
 
   (push-status-element! side context-status-element))
 
