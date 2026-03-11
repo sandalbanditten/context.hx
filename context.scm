@@ -201,9 +201,10 @@
   (register-hook 'post-command
                  (lambda (cmd)
                    (if (string-contains? cmd "quit")
-                       (debounce 50 (lambda () (refresh-context-query! (get-current-doc-id)))))))
+                       (debounce 200 (lambda () (refresh-context-query! (get-current-doc-id)))))))
 
-  (push-status-element! side context-status-element))
+  (push-status-element! side context-status-element)
+  (debounce 200 (lambda () (refresh-context-query! (get-current-doc-id)))))
 
 (provide context-status-element
          context-enable)
