@@ -9,6 +9,7 @@
 
 (struct CtxNode (node named-nodes) #:mutable)
 (struct NodeStyle (node style))
+(define curr-txt (string->rope ""))
 
 (define (list-coerce l)
   (if (list? l)
@@ -135,17 +136,18 @@
 (define cached-match '())
 
 (define (refresh-context-query! doc-id)
-  (set! cached-match (get-contexts doc-id)))
+  (set! cached-match (get-contexts doc-id))
+  (set! curr-txt (editor->text doc-id)))
 
 (define queued (box #f))
 (define cached-path '())
 
-(define (get-path match doc-id)
+(define (get-path match)
   (cond
     [(empty? match) '()]
     [(unbox queued) cached-path]
     [else
-     (let* ([text (editor->text doc-id)]
+     (let* ([text curr-txt]
             [pos (rope-char->byte text (cursor-position))])
        (map (lambda (x)
               (map (lambda (y) (span (tsnode-text-slice (NodeStyle-node y) text) (NodeStyle-style y)))
@@ -183,8 +185,7 @@
                                                    (cons (span ": " (style)) acc))))
                                      '()
                                      (begin
-                                       (set! cached-path
-                                             (get-path cached-match (editor->doc-id view-id)))
+                                       (set! cached-path (get-path cached-match))
                                        cached-path)))
                         '()))))
 
