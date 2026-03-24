@@ -136,16 +136,18 @@
 (define cached-match '())
 
 (define (refresh-context-query! doc-id)
-  (set! cached-match (get-contexts doc-id))
-  (set! curr-txt (editor->text doc-id)))
+  (set! curr-txt (editor->text doc-id))
+  (set! cached-match (get-contexts doc-id)))
 
 (define queued (box #f))
 (define cached-path '())
 
 (define (get-path match)
+  (define char-pos (cursor-position))
   (cond
     [(empty? match) '()]
     [(unbox queued) cached-path]
+    [(>= char-pos (rope-len-chars curr-txt)) '()]
     [else
      (let* ([text curr-txt]
             [pos (rope-char->byte text (cursor-position))])
