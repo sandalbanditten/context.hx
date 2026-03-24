@@ -143,14 +143,12 @@
 (define cached-path '())
 
 (define (get-path match)
-  (define char-pos (cursor-position))
   (cond
     [(empty? match) '()]
     [(unbox queued) cached-path]
-    [(>= char-pos (rope-len-chars curr-txt)) '()]
     [else
      (let* ([text curr-txt]
-            [pos (rope-char->byte text (cursor-position))])
+            [pos (rope-char->byte text (min (cursor-position) (rope-len-chars text)))])
        (map (lambda (x)
               (map (lambda (y) (span (tsnode-text-slice (NodeStyle-node y) text) (NodeStyle-style y)))
                    (CtxNode-named-nodes x)))
