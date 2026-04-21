@@ -31,4 +31,4 @@ add the lines to your init.scm file to configure the context
 ```
 
 
-[screenshot](screenshot.png)
+![screenshot](screenshot.png)
