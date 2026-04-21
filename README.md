@@ -29,3 +29,6 @@ add the lines to your init.scm file to configure the context
 (context-enable 'right)
 
 ```
+
+
+[screenshot](screenshot.png)
