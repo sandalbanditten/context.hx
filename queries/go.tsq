@@ -1,0 +1,19 @@
+;; vi:ft=tsq
+
+
+(function_declaration
+  "func" @keyword.function
+  name: (identifier) @function) @context
+
+(method_declaration
+  "func" @keyword.function
+  receiver: (parameter_list (parameter_declaration type: (_) @type))
+  name: (field_identifier) @function) @context
+
+
+(type_declaration "type" @keyword
+  (type_spec
+    name: (_) @type
+    type: [(struct_type "struct" @keyword) (interface_type "interface" @keyword)]
+  )
+) @context
