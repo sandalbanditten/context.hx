@@ -1,0 +1,7 @@
+;; vi:ft=tsq
+
+(function_declaration
+ "function" @keyword.function
+ name: (identifier) @function)
+@context
+

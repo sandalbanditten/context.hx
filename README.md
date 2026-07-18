@@ -1,13 +1,11 @@
 # context.hx
-Helix Plugin for context (requires unmerged branch)
+Helix Plugin for context
 
 # Installation
-
+Installing a Helix fork with plugins:
 ```sh
-git clone https://github.com/gerblesh/helix.git -b statusline
+git clone https://github.com/mattwparas/helix.git -b steel-event-system
 ```
-(currently only the statusline is supported so a fork is required)
-I will likely make this into a steel component in the future
 
 then build/install the helix fork with:
 ```sh
