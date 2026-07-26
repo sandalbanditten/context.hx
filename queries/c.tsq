@@ -13,3 +13,6 @@
 
 (preproc_ifdef "#ifdef" @keyword.directive name: (identifier) @constant)
 @context
+
+(preproc_if "#if" @keyword.directive condition: (identifier) @constant)
+@context
