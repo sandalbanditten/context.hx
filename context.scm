@@ -3,7 +3,6 @@
 (require "helix/misc.scm")
 (require "helix/configuration.scm")
 (require "helix/components.scm")
-(require "breadcrumbs/breadcrumbs.scm")
 (require (prefix-in static. "helix/static.scm"))
 (require-builtin helix/core/text)
 
