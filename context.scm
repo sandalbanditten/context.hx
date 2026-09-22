@@ -152,7 +152,9 @@
               (map (lambda (y) (span (tsnode-text-slice (NodeStyle-node y) text) (NodeStyle-style y)))
                    (CtxNode-named-nodes x)))
             (filter (lambda (y)
-                      (and (<= pos (tsnode-end-byte (CtxNode-node y)))
+                      ;; end byte is exclusive: abutting nodes otherwise both
+                      ;; match a cursor sitting exactly on the boundary
+                      (and (< pos (tsnode-end-byte (CtxNode-node y)))
                            (>= pos (tsnode-start-byte (CtxNode-node y)))))
                     match)))]))
 
@@ -176,16 +178,11 @@
 (define context-status-element
   (status-element (lambda (view-id focused)
                     (if focused
-                        (cons (span " " (style))
-                              (foldl (lambda (x acc)
-                                       (append x
-                                               (if (empty? acc)
-                                                   acc
-                                                   (cons (span ": " (style)) acc))))
-                                     '()
-                                     (begin
-                                       (set! cached-path (get-path cached-match))
-                                       cached-path)))
+                        (foldl (lambda (x acc) (append (cons (span "> " (style)) x) acc))
+                               '()
+                               (begin
+                                 (set! cached-path (get-path cached-match))
+                                 cached-path))
                         '()))))
 
 (define (context-enable side)
