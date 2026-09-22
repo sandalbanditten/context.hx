@@ -1,0 +1,44 @@
+;; vi:ft=tsq
+
+;; Type declarations
+
+(class_declaration
+  "class" @keyword
+  name: (identifier) @type) @context
+
+(interface_declaration
+  "interface" @keyword
+  name: (identifier) @type) @context
+
+(annotation_type_declaration
+  "@interface" @keyword
+  name: (identifier) @type) @context
+
+(enum_declaration
+  "enum" @keyword
+  name: (identifier) @type) @context
+
+(record_declaration
+  "record" @keyword
+  name: (identifier) @type) @context
+
+
+;; Members
+
+;; Java has no `fn`/`def` keyword, so the return type fills the same slot,
+;; the way c.tsq leads a function with its type.
+(method_declaration
+  type: (_) @type
+  name: (identifier) @function) @context
+
+(constructor_declaration
+  name: (identifier) @function) @context
+
+;; `record Point { ... }` -- a constructor without a parameter list
+(compact_constructor_declaration
+  name: (identifier) @function) @context
+
+;; `@interface Marker { String value(); }`
+(annotation_type_element_declaration
+  type: (_) @type
+  name: (identifier) @function) @context
