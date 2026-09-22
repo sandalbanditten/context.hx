@@ -24,7 +24,7 @@ add the lines to your init.scm file to configure the context
 (require "context/context.scm")
 
 ;; add context to the left side of the statusbar
-(context-enable 'right)
+(context-enable 'left)
 
 ```
 
